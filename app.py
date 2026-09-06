@@ -13,8 +13,18 @@ from agents.travel_scout import travel_scout
 
 def ask(agent, question: str) -> str:
     """Send one question to an agent and return its final reply."""
-    result = agent.invoke({"messages": [{"role": "user", "content": question}]})
-    return result["messages"][-1].content
+    final_reply = None
+    for event in agent.stream(
+        {"messages": [{"role": "user", "content": question}]},
+        stream_mode="values",
+    ):
+        messages = event.get("messages", [])
+        if messages and messages[-1].content:
+            final_reply = messages[-1].content
+
+    if final_reply is None:
+        raise RuntimeError("The agent stream produced no final reply.")
+    return final_reply
 
 
 if __name__ == "__main__":
