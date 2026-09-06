@@ -1,0 +1,8 @@
+deepagents
+langchain
+langchain-openai
+langchain-tavily
+python-dotenv
+tavily-python
+google-search-results
+pydantic
