@@ -1,5 +1,9 @@
 # Travel Agent
 
+> **Status: in progress.** Core agents and tools are built and working
+> individually; they are not yet wired together into a single graph. See
+> [Next steps](#next-steps).
+
 A small multi-agent travel assistant built with LangChain / `deepagents`. One
 top-level agent answers general travel questions and delegates to two
 specialist agents for deep itinerary planning and for flight/hotel search.
@@ -119,12 +123,35 @@ travel_agent/
 - **Shared setup** (new API key, new shared tool/model) → add it to
   `config.py`.
 
-### Possible extensions
+## Next steps
 
-- Wire `search_agent` as a tool under `travel_scout` (the same pattern used
-  for `itinerary_research_agent`) so one entry point can route to all three
-  agents.
-- Add a CLI/loop in `app.py` instead of the single hardcoded example query.
+The three agents currently work as standalone pieces (`travel_scout` calls
+`itinerary_research_agent` as a plain tool; `search_agent` is invoked
+directly from `app.py`). The next step is to replace this ad-hoc wiring with
+a **LangGraph** graph so all three agents are proper nodes with explicit,
+inspectable routing:
+
+- Model each agent (`travel_scout`, `itinerary_research_agent`,
+  `search_agent`) as a node in a `StateGraph`, with a shared conversation
+  state passed between them instead of the manual `.invoke(...)["messages"][-1]`
+  calls used today.
+- Add a router/supervisor node (or conditional edges out of `travel_scout`)
+  that decides — per user turn — whether to go to `itinerary_research_agent`,
+  `search_agent`, both, or answer directly, instead of hardcoding the
+  itinerary agent as `travel_scout`'s only delegate.
+- Wire `search_agent` into the graph the same way, so flight/hotel search is
+  reachable from the same entry point as itinerary planning instead of being
+  invoked separately.
+- Use LangGraph's checkpointing to persist conversation state across turns,
+  enabling a real multi-turn CLI/chat loop in `app.py` instead of the single
+  hardcoded example query.
+- Once the graph is in place, revisit `prompts/` — the supervisor/router will
+  need its own prompt describing how to pick between agents.
+
+### Other possible extensions
+
+- Add more tools (car rentals, activities/restaurants, currency conversion)
+  under `tools/`, following the existing `flights.py`/`hotels.py` pattern.
 
 ## Setup
 
